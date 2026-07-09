@@ -1,0 +1,48 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { v4 as uuidv4 } from 'uuid';
+import { faker } from "@faker-js/faker";
+
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export const API_URL = import.meta.env.VITE_API_URL
+
+
+export function createUuid() {
+  return crypto.randomUUID ? crypto.randomUUID() : uuidv4();
+}
+
+
+export function getOrCreateClientId() {
+  let clientId = window.localStorage.getItem("clientid");
+  if (!clientId) {
+    clientId = createUuid();
+    window.localStorage.setItem("clientid", clientId);
+  }
+  return clientId;
+}
+
+export function getOrCreateSessionId() {
+  let sessionId = window.localStorage.getItem("sessionid");
+  if (!sessionId) {
+    sessionId = createUuid();
+    window.localStorage.setItem("sessionid", sessionId);
+  }
+  return sessionId;
+}
+
+
+export function getOrGenerateName() {
+  let username = window.localStorage.getItem("username");
+
+  if (!username) {
+    username = faker.person.fullName();
+    window.localStorage.setItem("username", username);
+
+  }
+
+  return username
+}
