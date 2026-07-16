@@ -69,11 +69,11 @@ function RouteComponent() {
       {!message && (
         <>
           {isConnected && socketRef.current ? (
-            <div className="p-4 flex bg-(--header-bg) gap-4 h-[calc(100vh-171px)] items-stretch overflow-hidden">
+            <div className="p-4 flex flex-col sm:flex-row bg-(--header-bg) gap-4 sm:h-[calc(100vh-171px)] items-stretch overflow-hidden">
               <div className=" flex-1  rounded-md  overflow-hidden">
                 <Player targetRoomId={roomId} socket={socketRef.current} />
               </div>
-              <div className="w-90 shrink-0 h-full">
+              <div className="w-full sm:w-90 shrink-0 h-full">
                 <ChatBox socket={socketRef.current} />
               </div>
             </div>

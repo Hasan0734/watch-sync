@@ -1,5 +1,5 @@
 export type MessageType = {
-    message: string;
+    text: string;
     clientId: string;
     username: string;
     createdAt: Date;

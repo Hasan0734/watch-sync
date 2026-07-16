@@ -140,7 +140,7 @@ const Player = ({ targetRoomId, socket }: PlayerProps) => {
   };
   return (
       <MediaPlayer
-        className=""
+        className="w-full"
         ref={playerRef}
         onTimeUpdate={handleTimeUpdate}
         onPlay={handlePlay}

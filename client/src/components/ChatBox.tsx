@@ -10,7 +10,7 @@ import {
     Settings,
     Users,
 } from "lucide-react";
-import {useEffect, useState, type ChangeEvent, type FocusEventHandler} from "react";
+import {useEffect, useState, type ChangeEvent, useRef} from "react";
 import type {Socket} from "socket.io-client";
 import {
     Message,
@@ -36,17 +36,17 @@ interface User {
     name: string;
 }
 
-interface Typing {
-    clientId: string;
-    username: string;
-}
 
 
 const ChatBox = ({socket}: PropsType) => {
     const [activeUsers, setActiveUsers] = useState<User[]>([]);
     const [messages, setMessages] = useState<MessageType[]>([]);
-    const [message, setMessage] = useState("");
-    const [chatTyping, setChatTyping] = useState<Typing | null>(null)
+    const [text, setText] = useState("");
+    const [typingUser, setTypingUser] = useState<string | null>(null);
+
+    const isTypingRef = useRef<boolean>(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const clientId = getOrCreateClientId();
     const username = getOrGenerateName();
 
@@ -57,12 +57,16 @@ const ChatBox = ({socket}: PropsType) => {
         };
 
         const handleChatMessage = (msg: MessageType) => {
-            console.log(msg)
             setMessages((prev) => [...prev, msg]);
         };
 
-        const handleTyping = (msg: Typing | null) => {
-            setChatTyping(msg)
+        const handleTyping = (data: {user: string, isTyping: boolean}) => {
+            console.log("typing", data);
+            if(data?.isTyping){
+                setTypingUser(data.user);
+            }else {
+                setTypingUser(null);
+            }
         }
 
         socket.on("room:users-list", handleUsersList);
@@ -78,34 +82,41 @@ const ChatBox = ({socket}: PropsType) => {
 
     const onSubmit = (e: any) => {
         e.preventDefault();
-        if (!message) return;
+        if (!text) return;
         const msg = {
             clientId,
             username,
-            message,
+            text,
             createdAt: new Date(),
         }
         socket.emit("chat:message", msg);
         setMessages((prev) => [...prev, msg]);
-        setMessage("");
-        socket.emit("chat:typing", null);
+        setText("");
 
     };
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setMessage(e.target.value)
-        const msg = {
-            clientId,
-            username
+        setText(e.target.value)
+
+
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            socket.emit('chat:typing', {user: username, isTyping: true});
         }
-        socket.emit("chat:typing", msg)
+
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+        timeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            socket.emit("chat:typing", {user:username, isTyping: false});
+        }, 1500)
     }
 
     const onBlur = () => {
         socket.emit("chat:typing", null);
     }
     return (
-        <div className="w-full h-full flex flex-col border rounded-md bg-background">
+        <div className="w-full h-[500px] sm:h-full flex flex-col border rounded-md bg-background">
             <div className="grid grid-cols-3 gap-2  shrink-0 p-3">
                 <button className="flex items-center flex-col border py-2 px-2 gap-1 rounded-md text-sm">
                     <MessageSquareText size={20}/>
@@ -125,7 +136,7 @@ const ChatBox = ({socket}: PropsType) => {
                     {messages.map((message, index) => {
                         const isMe = message.clientId === clientId;
                         return (
-                            <Message key={message.message + index}
+                            <Message key={message.text + index}
                                      align={isMe ? "end" : "start"}
                             >
                                 <MessageAvatar>
@@ -139,16 +150,16 @@ const ChatBox = ({socket}: PropsType) => {
                                 </MessageAvatar>
                                 <MessageContent>
                                     <Bubble variant={isMe ? "default" : "muted"}>
-                                        <BubbleContent>{message.message}</BubbleContent>
+                                        <BubbleContent>{message.text}</BubbleContent>
                                     </Bubble>
                                 </MessageContent>
                             </Message>
                         )
                     })}
 
-                    {chatTyping && chatTyping.clientId !== clientId && <Marker role="status" className={"mb-3"}>
+                    {typingUser && <Marker role="status" className={"mb-3"}>
                         <MarkerContent className="shimmer">
-                            <span className="font-medium">{chatTyping.username}</span> is typing...
+                            <span className="font-medium">{typingUser}</span> is typing...
                         </MarkerContent>
                     </Marker>}
                 </div>
@@ -156,7 +167,7 @@ const ChatBox = ({socket}: PropsType) => {
                 <form className="px-3 shrink-0 pt-2" onSubmit={onSubmit}>
                     <InputGroup>
                         <InputGroupInput
-                            value={message}
+                            value={text}
                             onChange={onChange}
                             onBlur={onBlur}
                         />
