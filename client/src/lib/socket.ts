@@ -1,18 +1,13 @@
 import { io, Socket } from 'socket.io-client';
-import { getOrCreateClientId, getOrCreateSessionId, getOrGenerateName } from './utils';
 
-// "undefined" means the URL will be computed from the `window.location` object
 const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3001/';
 
-export const socketConnection = (roomId: string): Socket => {
-
-    const clientId = getOrCreateClientId()
-    const sessionId = getOrCreateSessionId()
-    const username = getOrGenerateName();
+export const socketConnection = (roomId: string, clientId: string, sessionId: string, username: string): Socket => {
 
     const socket = io(URL, {
         path: "/watch-party",
-        query: { roomId, clientId, sessionId, username }
+        query: { roomId, clientId, sessionId, username },
+        transports: ['websocket']
     })
 
     return socket

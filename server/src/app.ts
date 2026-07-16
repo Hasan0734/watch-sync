@@ -1,11 +1,10 @@
 import Fastify from "fastify";
-import websocket from "@fastify/websocket";
-import { healthRoutes } from "./routes/health";
-import { websocketRoutes } from "./routes/websocket";
-import socketIo from "./realtime/socket";
+import { websocketRoutes } from "./routes/websocket.ts";
+import socketIo from "./realtime/socket.ts";
 import cors from "@fastify/cors"
-import { roomRoutes } from "./routes/rooms";
+import { roomRoutes } from "./routes/rooms.ts";
 import fastifyRedis from '@fastify/redis';
+import {healthRoutes} from "./routes/health.ts";
 
 export async function buildApp() {
   const app = Fastify({

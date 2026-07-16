@@ -27,73 +27,73 @@ const Player = ({ targetRoomId, socket }: PlayerProps) => {
   // Guard flag to check if the action was initiated by a remote socket event
   const isRemoteAction = useRef(false);
 
-  useEffect(() => {
-    // 1. Establish Socket Connection
-    // socketRef.current = io("http://localhost:3001", {
-    //   path: "/watch-party",
-    //   query: { roomId: targetRoomId },
-    // });
+  // useEffect(() => {
+  //   // 1. Establish Socket Connection
+  //   // socketRef.current = io("http://localhost:3001", {
+  //   //   path: "/watch-party",
+  //   //   query: { roomId: targetRoomId },
+  //   // });
 
-    socket.on("room:initial-state", ({ currentTime, isPlaying }) => {
-      if (playerRef?.current) {
-        isRemoteAction.current = true;
-        playerRef.current.currentTime = currentTime; // Fast-forward to current host position
+  //   socket.on("room:initial-state", ({ currentTime, isPlaying }) => {
+  //     if (playerRef?.current) {
+  //       isRemoteAction.current = true;
+  //       playerRef.current.currentTime = currentTime; // Fast-forward to current host position
 
-        if (isPlaying) {
-          playerRef.current?.play();
-        } else {
-          playerRef.current?.pause();
-        }
-      }
-    });
+  //       if (isPlaying) {
+  //         playerRef.current?.play();
+  //       } else {
+  //         playerRef.current?.pause();
+  //       }
+  //     }
+  //   });
 
-    // 2. Listen for Remote Events
-    socket.on("player:play", () => {
-      if (playerRef.current?.paused) {
-        isRemoteAction.current = true; // Set guard flag
-        playerRef.current.play();
-      }
-    });
+  //   // 2. Listen for Remote Events
+  //   socket.on("player:play", () => {
+  //     if (playerRef.current?.paused) {
+  //       isRemoteAction.current = true; // Set guard flag
+  //       playerRef.current.play();
+  //     }
+  //   });
 
-    socket.on("player:pause", () => {
-      if (!playerRef.current?.paused) {
-        isRemoteAction.current = true; // Set guard flag
-        playerRef.current?.pause();
-      }
-    });
+  //   socket.on("player:pause", () => {
+  //     if (!playerRef.current?.paused) {
+  //       isRemoteAction.current = true; // Set guard flag
+  //       playerRef.current?.pause();
+  //     }
+  //   });
 
-    socket.on("player:seek", ({ time }: { time: number }) => {
-      // Prevent micro-adjustments loop if already close enough
-      if (Math.abs((playerRef.current?.currentTime || 0) - time) > 0.5) {
-        isRemoteAction.current = true; // Set guard flag
-        playerRef.current!.currentTime = time;
-      }
-    });
+  //   socket.on("player:seek", ({ time }: { time: number }) => {
+  //     // Prevent micro-adjustments loop if already close enough
+  //     if (Math.abs((playerRef.current?.currentTime || 0) - time) > 0.5) {
+  //       isRemoteAction.current = true; // Set guard flag
+  //       playerRef.current!.currentTime = time;
+  //     }
+  //   });
 
-    socket.on("player:rate", ({ rate }: { rate: number }) => {
-      if (playerRef.current?.playbackRate !== rate) {
-        isRemoteAction.current = true; // Set guard flag
-        playerRef.current!.playbackRate = rate;
-      }
-    });
+  //   socket.on("player:rate", ({ rate }: { rate: number }) => {
+  //     if (playerRef.current?.playbackRate !== rate) {
+  //       isRemoteAction.current = true; // Set guard flag
+  //       playerRef.current!.playbackRate = rate;
+  //     }
+  //   });
 
-    socket.on("error", (data: { message: string }) => {
-      alert(data.message);
-    });
+  //   socket.on("error", (data: { message: string }) => {
+  //     alert(data.message);
+  //   });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [targetRoomId, socket]);
+  //   return () => {
+  //     socket.disconnect();
+  //   };
+  // }, [targetRoomId, socket]);
 
   // --- Local Event Handlers (Triggered by UI / User interaction) ---
 
   const handlePlay = () => {
     // If this event was fired due to a remote socket command, consume the flag and block emitting
-    if (isRemoteAction.current) {
-      isRemoteAction.current = false;
-      return;
-    }
+    // if (isRemoteAction.current) {
+    //   isRemoteAction.current = false;
+    //   return;
+    // }
     socket?.emit("player:play");
   };
 
@@ -139,9 +139,8 @@ const Player = ({ targetRoomId, socket }: PlayerProps) => {
     }
   };
   return (
-    <div className=" min-h-[calc(100vh-200px)]">
       <MediaPlayer
-        className="h-full w-full"
+        className=""
         ref={playerRef}
         onTimeUpdate={handleTimeUpdate}
         onPlay={handlePlay}
@@ -167,7 +166,6 @@ const Player = ({ targetRoomId, socket }: PlayerProps) => {
           icons={defaultLayoutIcons}
         />
       </MediaPlayer>
-    </div>
   );
 };
 

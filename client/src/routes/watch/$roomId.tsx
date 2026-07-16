@@ -10,7 +10,8 @@ import {
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Socket } from "socket.io-client";
 
 export const Route = createFileRoute("/watch/$roomId")({
   component: RouteComponent,
@@ -19,44 +20,36 @@ export const Route = createFileRoute("/watch/$roomId")({
 function RouteComponent() {
   const { roomId } = Route.useParams();
   const navigate = useNavigate();
-  const socket = socketConnection(roomId);
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [message, setMessage] = useState();
+  const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    function onConnect() {
+    const clientId = getOrCreateClientId();
+    const sessionId = getOrCreateSessionId();
+    const username = getOrGenerateName();
+
+    socketRef.current = socketConnection(roomId, clientId, sessionId, username);
+
+    const socketInstance = socketRef.current;
+
+    socketInstance.on("connect", () => {
+      console.log("is connected");
       setIsConnected(true);
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-
-    socket.on("room:error", (ctx) => {
-      switch (ctx.code) {
-        case "ROOM_NOT_FOUND":
-          setMessage(ctx.message);
-          break;
-        default:
-          setMessage(ctx.message || "Something is wrong!");
-          break;
-      }
     });
 
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-    };
-  }, []);
+    socketInstance.on("room:error", (err) => {
+      console.log(err);
+      setMessage(err.message);
+    });
 
-  useEffect(() => {
-    getOrCreateClientId();
-    getOrCreateSessionId();
-    getOrGenerateName();
-  }, []);
+    // socketInstance.on("disconnect", (reason) => {
+    //   setIsConnected(false);
+    // });
+  }, [roomId]);
+
+  console.log(socketRef.current);
+  console.log({ message });
 
   return (
     <div className="">
@@ -73,21 +66,26 @@ function RouteComponent() {
           </div>
         </div>
       )}
-      {!message &&
-        (isConnected && socket ? (
-          <div className="p-4 flex  bg-(--header-bg) gap-1">
-            <div className="flex justify-center items-center flex-1  overflow-hidden">
-              <Player targetRoomId={roomId} socket={socket} />
+      {!message && (
+        <>
+          {isConnected && socketRef.current ? (
+            <div className="p-4 flex bg-(--header-bg) gap-4 h-[calc(100vh-171px)] items-stretch overflow-hidden">
+              <div className=" flex-1  rounded-md  overflow-hidden">
+                <Player targetRoomId={roomId} socket={socketRef.current} />
+              </div>
+              <div className="w-90 shrink-0 h-full">
+                <ChatBox socket={socketRef.current} />
+              </div>
             </div>
-            <ChatBox socket={socket} />
-          </div>
-        ) : (
-          <div className="min-h-[calc(100vh-300px)] sm:min-h-[calc(100vh-300px)] flex justify-center items-center">
-            <div className="flex gap-1 items-center flex-col ">
-              <Spinner className="size-5" /> Joining to room...
+          ) : (
+            <div className="min-h-[calc(100vh-300px)] sm:min-h-[calc(100vh-300px)] flex justify-center items-center">
+              <div className="flex gap-1 items-center flex-col ">
+                <Spinner className="size-5" /> Joining to room...
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        </>
+      )}
     </div>
   );
 }

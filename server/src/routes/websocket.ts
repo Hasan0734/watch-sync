@@ -1,130 +1,183 @@
 import { FastifyInstance } from "fastify";
+import {Socket} from "socket.io";
+
+const USER_TTL = 60 * 60 * 24; // 24 hours
+
+function safeParse<T>(value: string): T | null {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
 
 export async function websocketRoutes(app: FastifyInstance) {
+
   const broadcastRoomUsers = async (roomId: string) => {
     try {
-      const usersMap = await app.redis.hgetall(`room:${roomId}:users`);
-      const safeUsersMap = usersMap || {};
+      const users = await app.redis.hgetall(`room:${roomId}:users`);
+      if (!users) return;
 
-      const usersList = Object.values(safeUsersMap).map((userDataString) => {
-        return JSON.parse(userDataString); // Returns { clientId, name, sessionId }
+      const list = Object.values(users)
+        .map((item) => {
+          return safeParse(item as string);
+        })
+        .filter(Boolean);
+
+      app.io.to(roomId).emit("room:users-list", {
+        users: list,
       });
-
-      app.io.to(roomId).emit("room:users-list", { users: usersList });
-    } catch (error: any) {
-      app.log.error(`Failed to broadcast users for room ${roomId}:`, error.message);
+    } catch (error) {
+      app.log.error(error);
     }
   };
 
-  app.io.on("connection", async (socket) => {
+  async function removeUser(roomId: string, clientId: string, socketId: string) {
+    try {
+      const record = await app.redis.hget(`room:${roomId}:users`, clientId);
+      if (!record) return;
+
+      const user = safeParse<{ socketId: string }>(record);
+      if (!user) return;
+
+      // User already reconnected with a different socket
+      if (user.socketId !== socketId) {
+        return;
+      }
+
+      await app.redis.hdel(`room:${roomId}:users`, clientId);
+      await broadcastRoomUsers(roomId);
+
+      app.log.info(`[Socket] Removed client ${clientId} from room ${roomId}`);
+    } catch (error) {
+      app.log.error(error);
+    }
+  }
+
+  app.io.on("connection", async (socket:Socket) => {
     const roomId = socket.handshake.query.roomId as string;
     const username = (socket.handshake.query.username as string) || "Anonymous Guest";
     const clientId = socket.handshake.query.clientId as string;
-    const sessionId = socket.handshake.query.sessionId as string
+    const sessionId = socket.handshake.query.sessionId as string;
 
-    if (!roomId && !clientId) {
-      console.log(`[Socket] Connection rejected: Missing credentials.`)
-      return socket.disconnect()
-    };
+    // ---------------- Validation ----------------
+
+    if (!roomId || !clientId) {
+      socket.emit("room:error", {
+        code: "INVALID_CONNECTION",
+        message: "Missing roomId or clientId.",
+      });
+      socket.disconnect(true);
+      return;
+    }
 
     try {
-      const roomExists = await app.redis.exists(`room:${roomId}`);
+      // Fetch room data directly; handles both presence verification and state gathering in 1 call
+      const room = await app.redis.hgetall(`room:${roomId}`);
 
-      if (!roomExists) {
-        console.log(`Connection rejected: Room ${roomId} does not exist or has expired.`);
+      if (!room || Object.keys(room).length === 0) {
         socket.emit("room:error", {
           code: "ROOM_NOT_FOUND",
-          message: "This watch party room does not exist or has expired."
+          message: "This watch party room does not exist or has expired.",
         });
-
-        socket.disconnect()
+        socket.disconnect(true);
         return;
-      };
+      }
 
-      socket.join(roomId);
+      await socket.join(roomId);
 
       const userProfile = {
         id: clientId,
         name: username,
         sessionId,
-        socketId: socket.id
-      }
+        socketId: socket.id,
+      };
 
       await app.redis.hset(`room:${roomId}:users`, clientId, JSON.stringify(userProfile));
-      await app.redis.expire(`room:${roomId}:users`, 86400);
+      await app.redis.expire(`room:${roomId}:users`, USER_TTL);
 
       await broadcastRoomUsers(roomId);
 
-      const roomData = await app.redis.hgetall(`room:${roomId}`);
       socket.emit("room:initial-state", {
-        roomName: roomData.roomName || "Watch Party",
-        currentTime: parseFloat(roomData.currentTime || "0"),
-        isPlaying: roomData.isPlaying === "true"
+        roomName: room.roomName ?? "Watch Party",
+        currentTime: Number(room.currentTime ?? 0),
+        isPlaying: room.isPlaying === "true",
       });
-      console.log(`[Socket] User ${username} (${socket.id}) successfully connected to room: ${roomId}`);
 
-    } catch (error) {
-      console.error("[Socket Connection Error]:", error);
+      app.log.info(`[Socket] ${username} joined room ${roomId}`);
+
+    } catch (err) {
+      app.log.error(err);
       socket.emit("room:error", { code: "SERVER_ERROR", message: "Internal server error." });
-      return socket.disconnect();
+      return socket.disconnect(true);
     }
-    // --- Video Sync Events + Updating Redis State ---
 
-    socket.on("player:play", async (data) => {
-      // Broadcast to everyone else
-      socket.to(roomId).emit("player:play");
+    // ---------------- Player Events ----------------
 
-      // Update Redis: Keep track that the video is playing
-      await app.redis.hset(`room:${roomId}`, "isPlaying", "true");
+    socket.on("player:play", async () => {
+      try {
+        socket.to(roomId).emit("player:play");
+        await app.redis.hset(`room:${roomId}`, "isPlaying", "true");
+      } catch (err) {
+        app.log.error(err);
+      }
     });
 
-    socket.on("player:pause", async (data) => {
-      socket.to(roomId).emit("player:pause");
-
-      // Update Redis: Keep track that the video is paused
-      await app.redis.hset(`room:${roomId}`, "isPlaying", "false");
+    socket.on("player:pause", async () => {
+      try {
+        socket.to(roomId).emit("player:pause");
+        await app.redis.hset(`room:${roomId}`, "isPlaying", "false");
+      } catch (err) {
+        app.log.error(err);
+      }
     });
 
-    socket.on("player:seek", async (data) => {
-      socket.to(roomId).emit("player:seek", data);
+    socket.on("player:seek", async (data: { time: number }) => {
+      try {
+        socket.to(roomId).emit("player:seek", data);
+        await app.redis.hset(`room:${roomId}`, "currentTime", String(data.time));
+      } catch (err) {
+        app.log.error(err);
+      }
+    });
 
-      await app.redis.hset(`room:${roomId}`, "currentTime", data.time.toString());
+    socket.on("player:progress-sync", async (data: { time: number }) => {
+      try {
+        await app.redis.hset(`room:${roomId}`, "currentTime", String(data.time));
+      } catch (err) {
+        app.log.error(err);
+      }
     });
 
     socket.on("player:rate", (data) => {
       socket.to(roomId).emit("player:rate", data);
     });
-    socket.on("player:progress-sync", async (data) => {
-      await app.redis.hset(`room:${roomId}`, "currentTime", data.time.toString());
-    });
+
+    // ---------------- Chat ----------------
+
+    socket.on("chat:message", (data) => {
+      socket.to(roomId).emit("chat:message", data)
+    })
+
+    socket.on("chat:typing", (data) => {
+      socket.to(roomId).emit("chat:typing", data)
+    })
 
 
-    socket.on("disconnecting", async () => {
+    // ---------------- Disconnect ----------------
+    socket.on("disconnecting", () => {
+      // Capture the targeted room explicitly before the socket context strips its rooms
+      const targetRoomId = roomId;
 
-      for (const room of socket.rooms) {
-        console.log(room, socket.id)
-        if (room !== socket.id) {
-          setTimeout(async () => {
-            try {
-              const currentRecord = await app.redis.hget(`room:${roomId}:users`, clientId);
-              if (!currentRecord) return;
-
-              const parseRecord = JSON.parse(currentRecord);
-
-              if (parseRecord.socketId === socket.id) {
-                await app.redis.hdel(`room:${room}:users`, clientId);
-                await broadcastRoomUsers(room);
-                console.log(`[Socket] Cleaned up inactive user: ${username}`);
-              }
-            } catch (err) {
-              console.error(`Error processing disconnect for room ${room}:`, err);
-            }
-          }, 2000)
-        }
+      if (targetRoomId) {
+        setTimeout(() => {
+          removeUser(targetRoomId, clientId, socket.id);
+        }, 2000);
       }
     });
-    socket.on("disconnect", () => {
-      console.log(`[Socket] User ${socket.id} is fully disconnected.`);
+
+    socket.on("disconnect", (reason) => {
+      app.log.info(`[Socket] ${socket.id} disconnected (${reason})`);
     });
   });
 }
