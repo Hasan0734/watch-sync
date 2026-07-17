@@ -36,6 +36,8 @@ const ChatForm = ({socket, setMessages}: ChatFormProps) => {
         socket.emit("chat:message", msg);
         setMessages((prev) => [...prev, msg]);
         setText("");
+        socket.emit("chat:typing", {user: username, isTyping: false});
+
 
     };
 

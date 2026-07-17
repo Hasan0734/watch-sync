@@ -14,7 +14,7 @@ interface MessageListProps {
 }
 
 const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: MessageListProps) => {
-   const clientId = getOrCreateClientId()
+    const clientId = getOrCreateClientId()
 
     return (
         <div
@@ -45,6 +45,7 @@ const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: Message
                     </Message>
                 )
             })}
+            
             {typingUser && <Marker role="status" className={"mb-3"}>
                 <MarkerContent className="shimmer">
                     <span className="font-medium">{typingUser}</span> is typing...
