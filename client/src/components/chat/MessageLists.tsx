@@ -1,10 +1,11 @@
-import React, {type Ref} from 'react';
-import {Message, MessageAvatar, MessageContent} from "#/components/ui/message.tsx";
+import {type Ref} from 'react';
+import {Message, MessageAvatar, MessageContent, MessageFooter} from "#/components/ui/message.tsx";
 import {Avatar, AvatarFallback, AvatarImage} from "#/components/ui/avatar.tsx";
 import {Bubble, BubbleContent} from "#/components/ui/bubble.tsx";
 import {Marker, MarkerContent} from "#/components/ui/marker.tsx";
 import type {MessageType} from "#/lib/types.ts";
 import {getOrCreateClientId} from "#/lib/utils.ts";
+import {format} from 'date-fns'
 
 interface MessageListProps {
     messages: MessageType[];
@@ -40,12 +41,16 @@ const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: Message
                         <MessageContent>
                             <Bubble variant={isMe ? "default" : "muted"}>
                                 <BubbleContent>{message.text}</BubbleContent>
+
                             </Bubble>
+                            <MessageFooter>
+                                {format(new Date(message.createdAt), "h:mm:ss a")}
+                            </MessageFooter>
                         </MessageContent>
                     </Message>
                 )
             })}
-            
+
             {typingUser && <Marker role="status" className={"mb-3"}>
                 <MarkerContent className="shimmer">
                     <span className="font-medium">{typingUser}</span> is typing...

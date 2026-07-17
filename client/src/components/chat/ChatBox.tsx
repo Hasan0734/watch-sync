@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import type {Socket} from "socket.io-client";
 import type {MessageType, User} from "#/lib/types.ts";
 import ChatHeaderTab from "#/components/chat/ChatHeaderTab.tsx";
@@ -26,6 +26,7 @@ const ChatBox = ({socket}: PropsType) => {
         };
 
         const handleChatMessage = (msg: MessageType) => {
+            console.log(msg)
             setMessages((prev) => [...prev, msg]);
         };
 
