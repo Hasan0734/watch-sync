@@ -22,7 +22,7 @@ function App() {
       getOrGenerateName();
       getOrCreateClientId();
       getOrCreateSessionId();
-      await navigate({ to: `/watch/${data.id}` });
+      await navigate({ to: `/watch/${data.roomId}` });
       return data;
     } catch (error: any) {
       console.log(error.message);

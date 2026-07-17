@@ -26,7 +26,6 @@ const ChatBox = ({socket}: PropsType) => {
         };
 
         const handleChatMessage = (msg: MessageType) => {
-            console.log(msg)
             setMessages((prev) => [...prev, msg]);
         };
 
@@ -98,13 +97,16 @@ const ChatBox = ({socket}: PropsType) => {
                     />
                     {(unreadCount > 0 || typingUser) && !isNearBottom && (
                         <div
-                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-sm text-center"
+                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-sm text-center z-10"
                         >
-                            {unreadCount > 0 && <p
+                            {unreadCount > 0 && <button
+                                className={"cursor-pointer bg-accent px-3 py-1 rounded-full"}
                                 onClick={handleScrollToBottom}
-                            >↓ {unreadCount} New Messages</p>}
+                            >↓ {unreadCount} New Messages</button>}
 
-                            {typingUser && <p className={"text-muted-foreground"}> {typingUser} is typing...</p>}
+                            {typingUser &&
+                                <p className={"text-muted-foreground bg-background px-3 py-1 rounded-full"}> {typingUser} is
+                                    typing...</p>}
                         </div>
                     )}
                 </div>
