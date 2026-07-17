@@ -1,4 +1,4 @@
-import ChatBox from "#/components/ChatBox";
+import ChatBox from "#/components/chat/ChatBox.tsx";
 import Player from "#/components/Player";
 import { Spinner } from "#/components/ui/spinner";
 import { socketConnection } from "#/lib/socket";
@@ -46,10 +46,12 @@ function RouteComponent() {
     // socketInstance.on("disconnect", (reason) => {
     //   setIsConnected(false);
     // });
+
+
+
   }, [roomId]);
 
-  console.log(socketRef.current);
-  console.log({ message });
+
 
   return (
     <div className="">
@@ -73,7 +75,7 @@ function RouteComponent() {
               <div className=" flex-1  rounded-md  overflow-hidden">
                 <Player targetRoomId={roomId} socket={socketRef.current} />
               </div>
-              <div className="w-full sm:w-90 shrink-0 h-full">
+              <div className="w-full sm:w-95 shrink-0 h-full">
                 <ChatBox socket={socketRef.current} />
               </div>
             </div>
