@@ -1,10 +1,26 @@
-export type MessageType = {
-    text: string;
+// export type MessageType = {
+//     type: "message",
+//     text: string;
+//     clientId: string;
+//     username: string;
+//     createdAt: Date;
+// }
+export type SystemMessage = {
+    type: "system",
+    event: "join" | "leave";
     clientId: string;
     username: string;
-    createdAt: Date;
+    createdAt: number;
 }
 
+export type MessageType = {
+    type: "chat" | "system",
+    event?: "join" | "leave";
+    text?: string,
+    clientId: string;
+    username: string;
+    createdAt: number;
+};
 
 export interface User {
     id: string;

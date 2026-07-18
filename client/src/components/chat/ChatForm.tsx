@@ -1,10 +1,5 @@
-import  {type ChangeEvent, type Dispatch, type SetStateAction, useRef, useState} from 'react';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-} from "#/components/ui/input-group.tsx";
+import {type ChangeEvent, type Dispatch, type SetStateAction, useRef, useState} from 'react';
+import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput,} from "#/components/ui/input-group.tsx";
 import {getOrCreateClientId, getOrGenerateName} from "#/lib/utils.ts";
 import type {Socket} from "socket.io-client";
 import type {MessageType} from "#/lib/types.ts";
@@ -34,7 +29,7 @@ const ChatForm = ({socket, setMessages}: ChatFormProps) => {
             createdAt: new Date(),
         }
         socket.emit("chat:message", msg);
-        setMessages((prev) => [...prev, msg]);
+        // setMessages((prev) => [...prev, msg]);
         setText("");
         socket.emit("chat:typing", {user: username, isTyping: false});
 
