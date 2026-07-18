@@ -15,7 +15,6 @@ interface MessageListProps {
 }
 
 const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: MessageListProps) => {
-    const clientId = getOrCreateClientId()
 
     return (
         <div
@@ -26,9 +25,9 @@ const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: Message
 
                 switch (message.type) {
                     case "chat":
-                        return <MessageItem message={message}/>
+                        return <MessageItem  key={message.createdAt} message={message}/>
                     case "system":
-                        return <SystemMessage message={message}/>
+                        return <SystemMessage  key={message.createdAt} message={message}/>
                 }
 
             })}
@@ -46,11 +45,14 @@ export default MessageLists;
 
 
 const MessageItem = ({message}: { message: MessageType }) => {
+    const clientId = getOrCreateClientId()
+
     const isMe = message.clientId === clientId;
+
 
     return (
         <Message
-            key={message.text + index}
+
             align={isMe ? "end" : "start"}
         >
             <MessageAvatar>
