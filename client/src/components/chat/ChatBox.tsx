@@ -24,7 +24,6 @@ const ChatBox = ({socket}: PropsType) => {
         const handleUsersList = ({users}: { users: User[] }) => {
             setActiveUsers(users);
         };
-
         const handleChatMessage = (msg: MessageType) => {
             setMessages((prev) => [...prev, msg]);
         };
@@ -47,6 +46,7 @@ const ChatBox = ({socket}: PropsType) => {
             socket.off("chat:typing", handleTyping);
         };
     }, []);
+
     useEffect(() => {
         if (!messagesRef.current) return;
 
@@ -82,6 +82,7 @@ const ChatBox = ({socket}: PropsType) => {
         });
         setUnreadCount(0);
     }
+
 
     return (
         <div className="w-full h-125 sm:h-full flex flex-col border rounded-md bg-background">

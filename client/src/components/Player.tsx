@@ -17,14 +17,13 @@ interface PlayerProps {
 const Player = ({targetRoomId, socket}: PlayerProps) => {
     const playerRef = useRef<MediaPlayerInstance>(null);
     const isRemoteAction = useRef(false);
+    const isInitializing = useRef(true);
     const lastSequence = useRef(0);
 
     const clientId = getOrCreateClientId();
     const username = getOrGenerateName();
 
     useEffect(() => {
-
-
         const handleState = async (state: PlayerState) => {
             if (!playerRef.current) return;
             if (state.sequence <= lastSequence.current)
@@ -32,12 +31,10 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
 
             lastSequence.current = state.sequence;
             isRemoteAction.current = true;
+            isInitializing.current = true;
             try {
-
                 const elapsed = (Date.now() - state.updatedAt) / 1000;
-
                 const targetTime = state.playing ? state.currentTime + elapsed : state.currentTime;
-
                 const player = playerRef.current;
                 const drift = Math.abs(player.currentTime - targetTime);
                 if (drift > 2) {
@@ -50,7 +47,10 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
                     player.pause();
                 }
             } finally {
-                isRemoteAction.current = false;
+                setTimeout(() => {
+                    isRemoteAction.current = false;
+                    isInitializing.current = false;
+                }, 200);
             }
         }
 
@@ -61,9 +61,7 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
 
     }, []);
 
-
     useEffect(() => {
-
         const interval = setInterval(() => {
             if (!playerRef.current) return;
             if (playerRef.current.paused) return;
@@ -83,74 +81,44 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
         });
     };
 
-    const handlePlay = () => {
+
+    const broadcastPlayerAction = (isPlaying: boolean, chatActionText?: string) => {
         if (!playerRef.current) return;
+        if (isRemoteAction.current || isInitializing.current) return;
+
+        const currentTime = playerRef.current.currentTime;
+        const playbackRate = playerRef.current.playbackRate;
+
         socket.emit("player:update", {
-            playing: true,
-            currentTime: playerRef.current.currentTime,
-            playbackRate: playerRef.current.playbackRate,
+            playing: isPlaying,
+            currentTime,
+            playbackRate,
         });
 
-        const msg = {
-            clientId,
-            username,
-            text: `Play the video at ${formatTime(playerRef.current?.currentTime as number)}`,
-            createdAt: new Date(),
+        if (chatActionText) {
+            socket.emit("chat:message", {
+                clientId,
+                username,
+                text: `${chatActionText} at ${formatTime(currentTime)}`,
+                createdAt: new Date(),
+            });
         }
-        socket.emit("chat:message", msg)
     };
 
-    const handlePause = () => {
-        if (!playerRef.current) return;
-        socket.emit("player:update", {
-            playing: false,
-            currentTime: playerRef.current.currentTime,
-            playbackRate: playerRef.current.playbackRate,
-        });
+    const handlePlay = () => broadcastPlayerAction(true, "Play the video");
+    const handlePause = () => broadcastPlayerAction(false, "Pause the video");
+    // const handleSeek = () => broadcastPlayerAction(!playerRef.current?.paused, "Seeked the video at");
+    const handleSeek = (_, nativeEvent: any) => {
 
-        const msg = {
-            clientId,
-            username,
-            text: `Pause the video at  ${formatTime(playerRef.current?.currentTime as number)}`,
-            createdAt: new Date(),
-        }
-        socket.emit("chat:message", msg);
-
-    };
-
-    const handleSeek = () => {
-        if (!playerRef.current) return;
-        socket.emit("player:update", {
-            playing: !playerRef.current.paused,
-            currentTime: playerRef.current.currentTime,
-            playbackRate: playerRef.current.playbackRate,
-        });
-
-        // const msg = {
-        //     clientId,
-        //     username,
-        //     text: `Seeked the video at  ${formatTime(playerRef.current?.currentTime as number)}`,
-        //     createdAt: new Date(),
-        // }
-        // socket.emit("chat:message", msg);
+        if (!nativeEvent?.request) return;
+        broadcastPlayerAction(!playerRef.current?.paused, "Seeked the video at");
     };
 
     const handleRate = () => {
-        if (isRemoteAction.current) {
-            isRemoteAction.current = false;
-            return;
-        }
-        const rate = playerRef.current?.playbackRate;
+        if (!playerRef.current || isRemoteAction.current) return;
+        const rate = playerRef.current.playbackRate;
         if (rate !== undefined) {
-            socket?.emit("player:rate", {rate});
-        }
-    };
-
-    const handleTimeUpdate = (detail: any) => {
-        const currentTime = detail.currentTime;
-
-        if (Math.floor(currentTime) % 4 === 0) {
-            socket?.emit("player:progress-sync", {time: currentTime});
+            socket.emit("player:rate", {rate});
         }
     };
 
@@ -187,47 +155,3 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
 };
 
 export default Player;
-
-
-const handlePlayerPlay = async () => {
-    if (playerRef.current?.paused) {
-        isRemoteAction.current = true;
-        await playerRef.current?.play();
-    }
-}
-const handlePlayerPause = async () => {
-    if (playerRef.current?.play) {
-        isRemoteAction.current = true;
-        await playerRef.current?.pause();
-    }
-}
-
-const handleInitial = async ({currentTime, isPlaying}: { currentTime: number, isPlaying: boolean }) => {
-    if (!playerRef.current?.currentTime) return;
-
-    isRemoteAction.current = true;
-    playerRef.current.currentTime = currentTime;
-
-    if (isPlaying) {
-        await playerRef.current?.play();
-    } else {
-        await playerRef.current?.pause();
-    }
-}
-
-const handlePlayerSeek = ({time}: { time: number }) => {
-    if (Math.abs((playerRef.current?.currentTime || 0) - time) > 0.5) {
-        isRemoteAction.current = true;
-        playerRef.current!.currentTime = time;
-    }
-
-// socket.on("player:play", handlePlayerPlay)
-// socket.on("player:pause", handlePlayerPause)
-// socket.on("room:initial-state", handleInitial);
-// socket.on("player:seek", handlePlayerSeek);
-
-// socket.off("player:play", handlePlayerPlay)
-// socket.off("player:pause", handlePlayerPause)
-// socket.off("player:initial-state", handleInitial)
-// socket.off("player:seek", handlePlayerSeek);
-}
