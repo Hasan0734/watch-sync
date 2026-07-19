@@ -6,6 +6,8 @@ import ChatForm from "#/components/chat/ChatForm.tsx";
 import MessageLists from "#/components/chat/MessageLists.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { cn } from "#/lib/utils";
+import { Button } from "../ui/button";
+import { UserPlus } from "lucide-react";
 
 interface PropsType {
   socket: Socket;
@@ -138,20 +140,7 @@ const ChatBox = ({ socket }: PropsType) => {
             "h-auto block": activeTab === "participants",
           })}
         >
-          <div className="text-base font-medium flex justify-between items-center">
-            <h2> All Participants ({activeUsers.length})</h2>
-          </div>
-          <div className="mt-3 min-h-0 overflow-y-auto flex flex-col gap-1.5">
-            {activeUsers.map((user) => (
-              <div className="flex  gap-2 items-center bg-input p-1 rounded-lg">
-                <Avatar>
-                  <AvatarImage src="/avatars/10.png" alt="@me" />
-                  <AvatarFallback>ME</AvatarFallback>
-                </Avatar>
-                <h3 className="text-sm">{user.name}</h3>
-              </div>
-            ))}
-          </div>
+          <ShowUserList participants={activeUsers} />
         </div>
       </div>
     </div>
@@ -159,3 +148,27 @@ const ChatBox = ({ socket }: PropsType) => {
 };
 
 export default ChatBox;
+
+const ShowUserList = ({ participants }: { participants: User[] }) => {
+  return (
+    <>
+      <div className="text-base font-medium flex justify-between items-center">
+        <h2> All Participants ({participants.length})</h2>
+        <Button variant={'secondary'} size={'sm'}>
+           <UserPlus/> Invite
+        </Button>
+      </div>
+      <div className="mt-3 min-h-0 overflow-y-auto flex flex-col gap-1.5">
+        {participants.map((user) => (
+          <div className="flex  gap-2 items-center bg-input p-1 rounded-lg">
+            <Avatar>
+              <AvatarImage src="/avatars/10.png" alt="@me" />
+              <AvatarFallback>ME</AvatarFallback>
+            </Avatar>
+            <h3 className="text-sm">{user.name}</h3>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};

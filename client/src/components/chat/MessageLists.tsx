@@ -49,7 +49,6 @@ const MessageItem = ({message}: { message: MessageType }) => {
 
     const isMe = message.clientId === clientId;
 
-
     return (
         <Message
 
@@ -79,11 +78,13 @@ const MessageItem = ({message}: { message: MessageType }) => {
 
 const SystemMessage = ({message}: { message: MessageType }) => {
     return (
-        <div className={"flex justify-center"}>
+        <div className={"flex justify-center p-1"}>
             <p className={"text-xs font-medium text-muted-foreground"}>
                 {message.event === "join"
                     ? `🎉 ${message.username} joined`
-                    : `👋 ${message.username} left`}
+                    : `👋 ${message.username} left`} at
+
+                <span className=' text-center text-[10px]'> {format(message.createdAt, "h:mm:ss a")}</span>
             </p>
         </div>
     )
