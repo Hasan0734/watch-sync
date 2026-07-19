@@ -14,7 +14,7 @@ interface PlayerProps {
     socket: Socket;
 }
 
-const Player = ({targetRoomId, socket}: PlayerProps) => {
+const Player = ({socket}: PlayerProps) => {
     const playerRef = useRef<MediaPlayerInstance>(null);
     const isRemoteAction = useRef(false);
     const isInitializing = useRef(true);
@@ -105,13 +105,13 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
         }
     };
 
-    const handlePlay = () => broadcastPlayerAction(true, "Play the video");
-    const handlePause = () => broadcastPlayerAction(false, "Pause the video");
-    // const handleSeek = () => broadcastPlayerAction(!playerRef.current?.paused, "Seeked the video at");
-    const handleSeek = (_, nativeEvent: any) => {
+    const handlePlay = () => broadcastPlayerAction(true, "Play the video at");
+    const handlePause = () => broadcastPlayerAction(false, "Pause the video at");
+
+    const handleSeek = (_:any, nativeEvent: any) => {
 
         if (!nativeEvent?.request) return;
-        broadcastPlayerAction(!playerRef.current?.paused, "Seeked the video at");
+        broadcastPlayerAction(!playerRef.current?.paused, "jumped to");
     };
 
     const handleRate = () => {
@@ -125,7 +125,8 @@ const Player = ({targetRoomId, socket}: PlayerProps) => {
 
     return (
         <MediaPlayer
-            className="w-full relative"
+            className=""
+            // aspectRatio="9/16"
             ref={playerRef}
             // onTimeUpdate={handleTimeUpdate}
             onPlay={handlePlay}
