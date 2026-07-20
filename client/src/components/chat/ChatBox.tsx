@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { cn, getInitials } from "#/lib/utils";
 import { Button } from "../ui/button";
 import { UserPlus } from "lucide-react";
+import { Popover, PopoverTrigger } from "../ui/popover";
+import InviteModal from "./InviteModal";
 
 interface PropsType {
   socket: Socket;
@@ -154,9 +156,14 @@ const ShowUserList = ({ participants }: { participants: User[] }) => {
     <>
       <div className="text-base font-medium flex justify-between items-center">
         <h2> All Participants ({participants.length})</h2>
-        <Button variant={'secondary'} size={'sm'}>
-           <UserPlus/> Invite
-        </Button>
+        <Popover>
+          <PopoverTrigger>
+            <Button variant={"secondary"} size={"sm"}>
+              <UserPlus /> Invite
+            </Button>
+          </PopoverTrigger>
+          <InviteModal />
+        </Popover>
       </div>
       <div className="mt-3 min-h-0 overflow-y-auto flex flex-col gap-1.5">
         {participants.map((user) => (

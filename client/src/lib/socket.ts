@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
+import { API_URL } from './utils';
 
-const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3001/';
+const URL = process.env.NODE_ENV === 'production' ? undefined : API_URL;
 
 export const socketConnection = (roomId: string, clientId: string, sessionId: string, username: string): Socket => {
 
