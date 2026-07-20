@@ -5,7 +5,7 @@ import ChatHeaderTab from "#/components/chat/ChatHeaderTab.tsx";
 import ChatForm from "#/components/chat/ChatForm.tsx";
 import MessageLists from "#/components/chat/MessageLists.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { cn } from "#/lib/utils";
+import { cn, getInitials } from "#/lib/utils";
 import { Button } from "../ui/button";
 import { UserPlus } from "lucide-react";
 
@@ -163,7 +163,7 @@ const ShowUserList = ({ participants }: { participants: User[] }) => {
           <div className="flex  gap-2 items-center bg-input p-1 rounded-lg">
             <Avatar>
               <AvatarImage src="/avatars/10.png" alt="@me" />
-              <AvatarFallback>ME</AvatarFallback>
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
             </Avatar>
             <h3 className="text-sm">{user.name}</h3>
           </div>

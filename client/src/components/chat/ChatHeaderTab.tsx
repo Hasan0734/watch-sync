@@ -17,7 +17,7 @@ const ChatHeaderTab = ({ activeUsers, activeTab, handleTab }: Props) => {
         onClick={() => handleTab("chat")}
         className={cn(
           "flex items-center flex-col border py-2 px-2 gap-1 rounded-md text-sm",
-          { "bg-secondary": activeTab === "chat" },
+          { "bg-muted": activeTab === "chat" },
         )}
       >
         <MessageSquareText size={20} />
@@ -27,7 +27,7 @@ const ChatHeaderTab = ({ activeUsers, activeTab, handleTab }: Props) => {
         onClick={() => handleTab("participants")}
         className={cn(
           "flex items-center flex-col border py-2 px-2 gap-1 rounded-md text-sm",
-          { "bg-secondary": activeTab === "participants" },
+          { "bg-muted": activeTab === "participants" },
         )}
       >
         <Users size={20} />
@@ -39,7 +39,7 @@ const ChatHeaderTab = ({ activeUsers, activeTab, handleTab }: Props) => {
         onClick={() => handleTab("settings")}
         className={cn(
           "flex items-center flex-col border py-2 px-2 gap-1 rounded-md text-sm",
-          { "bg-secondary": activeTab === "settings" },
+          { "bg-muted": activeTab === "settings" },
         )}
       >
         <Settings size={20} />

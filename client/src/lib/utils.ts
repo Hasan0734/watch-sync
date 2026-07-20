@@ -57,3 +57,13 @@ export const formatTime = (timeInSeconds: number) => {
     // If hours > 0, include hours. Otherwise, start with minutes.
     return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 };
+
+
+export function getInitials(fullName:string) {
+  const words = fullName.trim().split(' ');
+  
+  if (words.length === 0) return '';
+  const firstInitial = words[0].charAt(0);
+  const lastInitial = words.length > 1 ? words[words.length - 1].charAt(0) : '';
+  return (firstInitial + lastInitial).toUpperCase();
+}

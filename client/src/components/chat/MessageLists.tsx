@@ -4,7 +4,7 @@ import {Avatar, AvatarFallback, AvatarImage} from "#/components/ui/avatar.tsx";
 import {Bubble, BubbleContent} from "#/components/ui/bubble.tsx";
 import {Marker, MarkerContent} from "#/components/ui/marker.tsx";
 import type {MessageType} from "#/lib/types.ts";
-import {getOrCreateClientId} from "#/lib/utils.ts";
+import {getInitials, getOrCreateClientId} from "#/lib/utils.ts";
 import {format} from 'date-fns'
 
 interface MessageListProps {
@@ -22,7 +22,6 @@ const MessageLists = ({messages, typingUser, messagesRef, handleScroll}: Message
             onScroll={handleScroll}
             className={"flex flex-col gap-6 h-full overflow-y-auto scrollbar-none"}>
             {messages.map((message, index) => {
-
                 switch (message.type) {
                     case "chat":
                         return <MessageItem  key={message.createdAt} message={message}/>
@@ -60,7 +59,7 @@ const MessageItem = ({message}: { message: MessageType }) => {
                     <AvatarFallback>ME</AvatarFallback>
                 </Avatar> : <Avatar>
                     <AvatarImage src="/avatars/02.png" alt="@rabbit"/>
-                    <AvatarFallback>{message.username.slice(0, 1)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(message.username)}</AvatarFallback>
                 </Avatar>}
             </MessageAvatar>
             <MessageContent>
