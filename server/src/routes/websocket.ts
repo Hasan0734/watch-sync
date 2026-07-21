@@ -2,7 +2,6 @@ import {FastifyInstance} from "fastify";
 import {Socket} from "socket.io";
 import {PlayerUpdate} from "../types/index.ts";
 
-
 const USER_TTL = 60 * 60 * 24; // 24 hours
 
 function safeParse<T>(value: string): T | null {
@@ -149,7 +148,7 @@ export async function websocketRoutes(app: FastifyInstance) {
         // ---------------- Chat ----------------
 
         socket.on("chat:message", (data) => {
-
+            
             app.io.to(roomId).emit("chat:message", {...data, type: "chat"});
         })
 
