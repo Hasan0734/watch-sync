@@ -6,6 +6,8 @@
 
 @custom-variant dark (&:is(.dark *));
 @plugin "@tailwindcss/typography";
+/* @plugin "@vidstack/react/tailwind.cjs"; */
+
 
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;

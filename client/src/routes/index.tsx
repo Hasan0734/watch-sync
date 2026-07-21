@@ -1,4 +1,5 @@
 import {
+  API_URL,
   getOrCreateClientId,
   getOrCreateSessionId,
   getOrGenerateName,
@@ -13,7 +14,7 @@ function App() {
   const navigate = useNavigate();
   const handleNewRoom = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/create-room`);
+      const res = await fetch(`${API_URL}/create-room`);
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }

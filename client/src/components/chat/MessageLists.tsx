@@ -45,12 +45,9 @@ export default MessageLists;
 
 const MessageItem = ({message}: { message: MessageType }) => {
     const clientId = getOrCreateClientId()
-
     const isMe = message.clientId === clientId;
-
     return (
         <Message
-
             align={isMe ? "end" : "start"}
         >
             <MessageAvatar>

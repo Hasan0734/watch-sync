@@ -157,7 +157,7 @@ const ShowUserList = ({ participants }: { participants: User[] }) => {
       <div className="text-base font-medium flex justify-between items-center">
         <h2> All Participants ({participants.length})</h2>
         <Popover>
-          <PopoverTrigger>
+          <PopoverTrigger asChild>
             <Button variant={"secondary"} size={"sm"}>
               <UserPlus /> Invite
             </Button>
@@ -167,7 +167,10 @@ const ShowUserList = ({ participants }: { participants: User[] }) => {
       </div>
       <div className="mt-3 min-h-0 overflow-y-auto flex flex-col gap-1.5">
         {participants.map((user) => (
-          <div className="flex  gap-2 items-center bg-input p-1 rounded-lg">
+          <div
+            key={user.id}
+            className="flex  gap-2 items-center bg-input p-1 rounded-lg"
+          >
             <Avatar>
               <AvatarImage src="/avatars/10.png" alt="@me" />
               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>

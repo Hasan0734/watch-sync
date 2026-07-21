@@ -7,7 +7,6 @@ import {
   MediaPlayerInstance,
   MediaProvider,
   Poster,
-  type MediaEvents,
 } from "@vidstack/react";
 import {
   defaultLayoutIcons,
