@@ -1,6 +1,6 @@
-import {FastifyInstance} from "fastify";
-import {Socket} from "socket.io";
-import {PlayerUpdate} from "../types/index.ts";
+import { FastifyInstance } from "fastify";
+import { Socket } from "socket.io";
+import { PlayerUpdate } from "../types/index.ts";
 
 const USER_TTL = 60 * 60 * 24; // 24 hours
 
@@ -86,10 +86,10 @@ export async function websocketRoutes(app: FastifyInstance) {
                 return;
             }
 
-            const state = await app.redis.get(`room:${roomId}:state`);
-            const parsedState = JSON.parse(state as string);
+
 
             await socket.join(roomId);
+
 
             const userProfile = {
                 id: clientId,
@@ -109,29 +109,33 @@ export async function websocketRoutes(app: FastifyInstance) {
             });
 
             await broadcastRoomUsers(roomId);
-            socket.emit("player:state", {
-                playing: parsedState.playing,
-                currentTime: Number(parsedState.currentTime),
-                playbackRate: Number(parsedState.playbackRate),
-                updatedAt: Number(parsedState.updatedAt),
-                sequence: Number(parsedState.sequence),
+            const [player, media] = await Promise.all([
+                app.redis.get(`room:${roomId}:state`),
+                app.redis.get(`room:${roomId}:media`)
+            ]);
+
+            socket.emit("room:state", {
+                media: JSON.parse(media!),
+                player: JSON.parse(player!),
             });
 
             app.log.info(`[Socket] ${username} joined room ${roomId}`);
 
         } catch (err) {
             app.log.error(err);
-            socket.emit("room:error", {code: "SERVER_ERROR", message: "Internal server error."});
+            socket.emit("room:error", { code: "SERVER_ERROR", message: "Internal server error." });
             return socket.disconnect(true);
         }
 
         // ---------------- Player state ----------------
 
         socket.on("player:update", async (payload: PlayerUpdate) => {
-            const state = await app.redis.get(`room:${roomId}:state`);
-            const parsedState = JSON.parse(state as string);
+            const [state, media] = await Promise.all([
+                app.redis.get(`room:${roomId}:state`),
+                app.redis.get(`room:${roomId}:media`)
+            ]);
+            const parsedState = state ? safeParse<any>(state) : null;
             if (!state) return;
-
             const sequence = Number(parsedState.sequence ?? 0) + 1;
             const newState = {
                 playing: payload.playing,
@@ -142,14 +146,44 @@ export async function websocketRoutes(app: FastifyInstance) {
             }
 
             await app.redis.set(`room:${roomId}:state`, JSON.stringify(newState), "EX", USER_TTL);
-            socket.to(roomId).emit("player:state", newState);
+            socket.to(roomId).emit("room:state", {
+                player: newState,
+                media: JSON.parse(media!),
+            });
+        })
+
+        socket.on("room:change-video", async (data: { url: string }) => {
+
+            if (!data.url) return;
+
+            const [state, media] = await Promise.all([
+                app.redis.get(`room:${roomId}:state`),
+                app.redis.get(`room:${roomId}:media`)
+            ]);
+
+
+            const parsedMedia = JSON.parse(media!);
+
+
+            const newMedia = {
+                ...parsedMedia,
+                videoUrl: data.url
+            }
+            await app.redis.set(`room:${roomId}:media`, JSON.stringify(newMedia), "EX", USER_TTL);
+
+            socket.to(roomId).emit("room:state", {
+                player: JSON.parse(state!),
+                media: JSON.parse(media!),
+            });
+
+
         })
 
         // ---------------- Chat ----------------
 
         socket.on("chat:message", (data) => {
-            
-            app.io.to(roomId).emit("chat:message", {...data, type: "chat"});
+
+            app.io.to(roomId).emit("chat:message", { ...data, type: "chat" });
         })
 
         socket.on("chat:typing", (data) => {

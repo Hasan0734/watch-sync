@@ -1,7 +1,7 @@
-import {type ClassValue, clsx} from "clsx"
-import {twMerge} from "tailwind-merge"
-import {v4 as uuidv4} from 'uuid';
-import {faker} from "@faker-js/faker";
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { v4 as uuidv4 } from 'uuid';
+import { faker } from "@faker-js/faker";
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -61,11 +61,26 @@ export const formatTime = (timeInSeconds: number) => {
 };
 
 
-export function getInitials(fullName:string) {
-  const words = fullName.trim().split(' ');
-  
-  if (words.length === 0) return '';
-  const firstInitial = words[0].charAt(0);
-  const lastInitial = words.length > 1 ? words[words.length - 1].charAt(0) : '';
-  return (firstInitial + lastInitial).toUpperCase();
+export function getInitials(fullName: string) {
+    const words = fullName.trim().split(' ');
+
+    if (words.length === 0) return '';
+    const firstInitial = words[0].charAt(0);
+    const lastInitial = words.length > 1 ? words[words.length - 1].charAt(0) : '';
+    return (firstInitial + lastInitial).toUpperCase();
 }
+
+export const isYouTube = (input: string) => {
+    return (
+        input.startsWith("https://www.youtube.com/") ||
+        input.startsWith("https://youtu.be/")
+    );
+};
+
+export const isHttp = (input: string) => {
+    return input.startsWith("http");
+};
+
+export const isMagnet = (input: string) => {
+    return input.startsWith("magnet:");
+};

@@ -1,15 +1,18 @@
 import ChatBox from "#/components/chat/ChatBox.tsx";
 import Player from "#/components/Player";
+import { Input } from "#/components/ui/input";
 import { Spinner } from "#/components/ui/spinner";
+import VideoInput from "#/components/VideoInput";
 import { socketConnection } from "#/lib/socket";
 import {
+  formatTime,
   getOrCreateClientId,
   getOrCreateSessionId,
   getOrGenerateName,
 } from "#/lib/utils";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, VideoOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 
@@ -23,6 +26,10 @@ function RouteComponent() {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [message, setMessage] = useState("");
+  const [videoUrl, setVideoUrl] = useState<string>("");
+
+  const clientId = getOrCreateClientId();
+  const username = getOrGenerateName();
 
   useEffect(() => {
     const clientId = getOrCreateClientId();
@@ -46,13 +53,18 @@ function RouteComponent() {
     // socketInstance.on("disconnect", (reason) => {
     //   setIsConnected(false);
     // });
-
-
-
   }, [roomId]);
 
-
-
+  const handleVideoUrl = (url: any) => {
+    socketRef.current?.emit("room:change-video", { url });
+    socketRef.current?.emit("chat:message", {
+      clientId,
+      username,
+      text: `Video source changed to: ${url}`,
+      createdAt: new Date(),
+    });
+    
+  };
   return (
     <div className="">
       {message && (
@@ -72,8 +84,17 @@ function RouteComponent() {
         <>
           {isConnected && socketRef.current ? (
             <div className="p-4 flex flex-col sm:flex-row bg-(--header-bg) gap-4  sm:h-120 xl:h-[calc(100vh-171px)] items-stretch overflow-hidden">
-              <div className=" flex-1  rounded-md  overflow-hidden">
-                <Player targetRoomId={roomId} socket={socketRef.current} />
+              <div className=" flex-1 space-y-2  rounded-md border-b">
+                <VideoInput
+                  videoUrl={videoUrl}
+                  handleVideoUrl={handleVideoUrl}
+                />
+
+                <Player
+                  setVideoUrl={setVideoUrl}
+                  videoUrl={videoUrl}
+                  socket={socketRef.current}
+                />
               </div>
               <div className="min-w-70 w-full sm:w-80 lg:w-95 shrink-0 h-full">
                 <ChatBox socket={socketRef.current} />

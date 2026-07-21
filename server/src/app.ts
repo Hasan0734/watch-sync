@@ -30,7 +30,6 @@ const options = {
 
 
 
-
 export async function buildApp() {
   const app = Fastify({
     logger: true,
@@ -53,7 +52,7 @@ export async function buildApp() {
 
 
   await app.register(healthRoutes);
-  app.register(youtubeRoutes)
+  await app.register(youtubeRoutes)
   await app.register(roomRoutes)
   await app.register(websocketRoutes);
   app.addContentTypeParser('*', (_, __, done) => done(null))

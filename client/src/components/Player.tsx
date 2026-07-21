@@ -1,6 +1,5 @@
-import "@vidstack/react/player/styles/default/theme.css";
-import "@vidstack/react/player/styles/default/layouts/audio.css";
-import "@vidstack/react/player/styles/default/layouts/video.css";
+import "@vidstack/react/player/styles/base.css";
+import "@vidstack/react/player/styles/plyr/theme.css";
 
 import {
   MediaPlayer,
@@ -8,25 +7,27 @@ import {
   MediaProvider,
   Poster,
 } from "@vidstack/react";
+
 import {
-  defaultLayoutIcons,
-  DefaultVideoLayout,
-} from "@vidstack/react/player/layouts/default";
+  PlyrLayout,
+  plyrLayoutIcons,
+} from "@vidstack/react/player/layouts/plyr";
 import { Socket } from "socket.io-client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import {
   formatTime,
   getOrCreateClientId,
   getOrGenerateName,
 } from "#/lib/utils.ts";
-import type { PlayerState } from "#/lib/types.ts";
+import type { PlayerState, RoomState } from "#/lib/types.ts";
 
 interface PlayerProps {
-  targetRoomId: string;
   socket: Socket;
+  videoUrl: string;
+  setVideoUrl: Dispatch<SetStateAction<string>>;
 }
 
-const Player = ({ socket }: PlayerProps) => {
+const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
   const playerRef = useRef<MediaPlayerInstance>(null);
   const isRemoteAction = useRef(false);
   const isInitializing = useRef(true);
@@ -36,10 +37,11 @@ const Player = ({ socket }: PlayerProps) => {
   const username = getOrGenerateName();
 
   useEffect(() => {
-    const handleState = async (state: PlayerState) => {
+    const handleState = async (roomState: RoomState) => {
+      const { media, player: state } = roomState;
+      setVideoUrl(media.videoUrl);
       if (!playerRef.current) return;
       if (state.sequence <= lastSequence.current) return;
-
       lastSequence.current = state.sequence;
       isRemoteAction.current = true;
       isInitializing.current = true;
@@ -67,9 +69,9 @@ const Player = ({ socket }: PlayerProps) => {
       }
     };
 
-    socket.on("player:state", handleState);
+    socket.on("room:state", handleState);
     return () => {
-      socket.off("player:state", handleState);
+      socket.off("room:state", handleState);
     };
   }, []);
 
@@ -102,6 +104,8 @@ const Player = ({ socket }: PlayerProps) => {
     const currentTime = playerRef.current.currentTime;
     const duration = playerRef.current.duration;
     const playbackRate = playerRef.current.playbackRate;
+
+    console.log(currentTime, duration);
 
     if (currentTime.toFixed() === duration.toFixed()) {
       socket.emit("player:update", {
@@ -148,49 +152,53 @@ const Player = ({ socket }: PlayerProps) => {
     }
   };
 
-//   const handleEnded = () => {
-//     if (!playerRef.current) return;
-//     const playbackRate = playerRef.current.playbackRate;
-
-//     socket.emit("player:update", {
-//       playing: false,
-//       currentTime: 0,
-//       playbackRate,
-//     });
-
-
-//   };
+  console.log({ videoUrl });
 
   return (
-    <MediaPlayer
-      className=""
-      // aspectRatio="9/16"
-      ref={playerRef}
-      // onTimeUpdate={handleTimeUpdate}
-      onPlay={handlePlay}
-      onPause={handlePause}
-      onSeeked={handleSeek}
-      onRateChange={handleRate}
-    //   onEnded={handleEnded}
-      // src="/video.mp4"
-      src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-      viewType="video"
-      streamType="on-demand"
-      logLevel="warn"
-      crossOrigin
-      playsInline
-      title="Sprite Fight"
-      muted
-      poster="https://files.vidstack.io/sprite-fight/poster.webp"
-    >
-      <MediaProvider>
-        <Poster className="vds-poster" />
-      </MediaProvider>
-      <DefaultVideoLayout
-        thumbnails="https://files.vidstack.io/sprite-fight/thumbnails.vtt"
-        icons={defaultLayoutIcons}
-      />
-    </MediaPlayer>
+    <>
+      {!videoUrl && (
+        <div className="h-full w-full bg-background flex justify-center items-center">
+          <div className="bg-accent p-4 rounded-md space-y-2 text-center">
+            <h3 className="font-semibold text-sm">
+              You're not watching anything!
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Pick something to watch above.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {videoUrl && (
+        <MediaPlayer
+          className=" xl:h-138 2xl:h-170 xl:w-full bg-background"
+
+          ref={playerRef}
+
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onSeeked={handleSeek}
+          onRateChange={handleRate}
+
+          src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+        //   src={videoUrl}
+          viewType="video"
+          streamType="on-demand"
+          logLevel="warn"
+          crossOrigin
+          playsInline
+          title="Sprite Fight"
+          muted
+          poster="https://files.vidstack.io/sprite-fight/poster.webp"
+        >
+          <MediaProvider>
+            <Poster className="vds-poster" />
+          </MediaProvider>
+
+          <PlyrLayout icons={plyrLayoutIcons} />
+        </MediaPlayer>
+      )}
+    </>
   );
 };
 

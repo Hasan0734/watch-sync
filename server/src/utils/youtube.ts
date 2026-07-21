@@ -1,20 +1,14 @@
+import config from "./config.ts";
 import { PlaylistVideo } from "./types.ts";
 import { youtube, youtube_v3 } from "@googleapis/youtube";
 
-import { loadEnvFile } from "node:process";
-
-try {
-  loadEnvFile();
-} catch (e) {
-  console.log(e);
-}
 
 
 
-let Youtube = process.env.YOUTUBE_API_KEY
+let Youtube = config.YOUTUBE_API_KEY
     ? youtube({
         version: "v3",
-        auth: process.env.YOUTUBE_API_KEY,
+        auth: config.YOUTUBE_API_KEY,
     })
     : null;
 
