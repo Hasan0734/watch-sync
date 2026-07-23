@@ -19,6 +19,7 @@ export function createUuid() {
 
 
 export function getOrCreateClientId() {
+
     let clientId = window.localStorage.getItem("clientid");
     if (!clientId) {
         clientId = createUuid();

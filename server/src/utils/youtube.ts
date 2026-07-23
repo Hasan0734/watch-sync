@@ -27,17 +27,15 @@ export const mapYoutubeSearchResult = (
 };
 
 
-export const searchYoutube = async (
-    query: string,
-): Promise<PlaylistVideo[]> => {
+export const searchYoutube = async (query: string): Promise<PlaylistVideo[]> => {
     try {
         const response = await Youtube?.search.list({
             part: ["snippet"],
             type: ["video"],
             maxResults: 25,
             q: query,
+            videoDuration: "medium"
         });
-        console.log('hello', process.env.YOUTUBE_API_KEY)
         return response?.data?.items?.map(mapYoutubeSearchResult) ?? [];
 
     } catch (err) {

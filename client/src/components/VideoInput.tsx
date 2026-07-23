@@ -23,13 +23,22 @@ interface PropsType {
   handleVideoUrl: (url: string) => void;
 }
 
+const isUrl = (str: string) =>
+  /^(https?:\/\/|magnet:\?)/i.test(str.trim());
+
 const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
   const [items, setItems] = useState(examples);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(videoUrl || "");
 
-  // Debounce logic & API fetching
   useEffect(() => {
-    if (!searchTerm.trim()) {
+    setSearchTerm(videoUrl || "");
+  }, [videoUrl]);
+
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+
+    // 1. If empty or it's a URL -> DO NOT call API
+    if (!trimmed || isUrl(trimmed)) {
       setItems(examples);
       return;
     }
@@ -37,7 +46,7 @@ const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
     const delayDebounceFn = setTimeout(async () => {
       try {
         const response = await fetch(
-          `${API_URL}/youtube?q=${encodeURIComponent(searchTerm)}`,
+          `${API_URL}/youtube?q=${encodeURIComponent(trimmed)}`,
         );
         if (!response.ok) throw new Error("Network response failed");
 
@@ -46,24 +55,45 @@ const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
       } catch (error) {
         console.error("Error fetching YouTube items:", error);
       }
-    }, 500); // 500 milliseconds debounce window
+    }, 500);
 
-    // Clean up the timer if the user types another character before 500ms passes
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setSearchTerm(newValue);
+
+    if (isUrl(newValue)) {
+      handleVideoUrl(newValue);
+    }
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    handleVideoUrl("");
+    setItems(examples);
+  };
 
   return (
     <div className="">
       <Combobox
         items={items}
-        onValueChange={(src) => handleVideoUrl(src as string)}
+        value={videoUrl}
+        onValueChange={(src) => {
+          if (typeof src === "string") {
+            handleVideoUrl(src);
+            setSearchTerm(src);
+          }
+        }}
       >
         <InputGroup className={cn("w-auto")}>
           <ComboboxPrimitive.Input
             render={
               <InputGroupInput
-                onChange={(e) => setSearchTerm(e.target.value)}
-                defaultValue={videoUrl || ""}
+                className="text-sm"
+                value={searchTerm}
+                onChange={handleInputChange}
                 placeholder="Enter video file URL, magnet link, Youtube link, or Youtube search term."
               />
             }
@@ -71,10 +101,7 @@ const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
 
           <InputGroupAddon align="inline-end">
             <InputGroupButton
-              onClick={() => {
-                setSearchTerm("");
-                handleVideoUrl("");
-              }}
+              onClick={handleClear}
               size="icon-xs"
               variant="ghost"
               asChild
@@ -85,6 +112,7 @@ const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
+
         <ComboboxContent>
           <ComboboxEmpty>
             <Spinner />
@@ -93,15 +121,15 @@ const VideoInput = ({ videoUrl, handleVideoUrl }: PropsType) => {
             {(item) => (
               <ComboboxItem
                 className={"border"}
-                key={item.name}
+                key={item.url}
                 value={item.url}
               >
                 <div className="flex">
                   <div className="border-r pr-2">
-                    <img className="w-28 h-20" src={item.img} alt={item.name} />
+                    <img className="w-28 h-20 object-cover" src={item.img} alt={item.name} />
                   </div>
-                  <div className="pl-2">
-                    <h4>{item.name}</h4>
+                  <div className="pl-2 flex items-center">
+                    <h4 className="text-sm font-medium">{item.name}</h4>
                   </div>
                 </div>
               </ComboboxItem>

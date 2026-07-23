@@ -6,6 +6,7 @@ import {
   MediaPlayerInstance,
   MediaProvider,
   Poster,
+  type MediaSrc,
 } from "@vidstack/react";
 
 import {
@@ -13,38 +14,39 @@ import {
   plyrLayoutIcons,
 } from "@vidstack/react/player/layouts/plyr";
 import { Socket } from "socket.io-client";
-import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   formatTime,
   getOrCreateClientId,
   getOrGenerateName,
 } from "#/lib/utils.ts";
-import type { PlayerState, RoomState } from "#/lib/types.ts";
+import type { MediaState, PlayerState, RoomState } from "#/lib/types.ts";
+import VideoInput from "./VideoInput";
 
 interface PlayerProps {
   socket: Socket;
-  videoUrl: string;
-  setVideoUrl: Dispatch<SetStateAction<string>>;
 }
 
-const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
+const Player = ({ socket }: PlayerProps) => {
   const playerRef = useRef<MediaPlayerInstance>(null);
   const isRemoteAction = useRef(false);
   const isInitializing = useRef(true);
   const lastSequence = useRef(0);
+  const [videoUrl, setVideoUrl] = useState<string>("");
 
   const clientId = getOrCreateClientId();
   const username = getOrGenerateName();
 
   useEffect(() => {
-    const handleState = async (roomState: RoomState) => {
-      const { media, player: state } = roomState;
-      setVideoUrl(media.videoUrl);
+    const handleState = async (state: PlayerState) => {
+      // const { media, player: state } = roomState;
       if (!playerRef.current) return;
       if (state.sequence <= lastSequence.current) return;
       lastSequence.current = state.sequence;
       isRemoteAction.current = true;
       isInitializing.current = true;
+      // setVideoUrl(media.videoUrl);
+
       try {
         const elapsed = (Date.now() - state.updatedAt) / 1000;
         const targetTime = state.playing
@@ -59,7 +61,7 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
         if (state.playing) {
           await player.play();
         } else {
-          player.pause();
+          await player.pause();
         }
       } finally {
         setTimeout(() => {
@@ -69,8 +71,14 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
       }
     };
 
+    const handleMedia = async (media: MediaState) => {
+      setVideoUrl(media.videoUrl);
+    };
+
+    socket.on("room:media", handleMedia);
     socket.on("room:state", handleState);
     return () => {
+      socket.off("room:media", handleMedia);
       socket.off("room:state", handleState);
     };
   }, []);
@@ -104,8 +112,6 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
     const currentTime = playerRef.current.currentTime;
     const duration = playerRef.current.duration;
     const playbackRate = playerRef.current.playbackRate;
-
-    console.log(currentTime, duration);
 
     if (currentTime.toFixed() === duration.toFixed()) {
       socket.emit("player:update", {
@@ -152,10 +158,25 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
     }
   };
 
-  console.log({ videoUrl });
+  const handleVideoUrl = (url: any) => {
+    if (playerRef.current) {
+      playerRef.current.pause();
+    }
+    // setVideoUrl(url);
+    // return;
+
+    socket?.emit("room:change-video", { url });
+    socket?.emit("chat:message", {
+      clientId,
+      username,
+      text: `Video source changed to: ${url}`,
+      createdAt: new Date(),
+    });
+  };
 
   return (
     <>
+      <VideoInput videoUrl={videoUrl} handleVideoUrl={handleVideoUrl} />
       {!videoUrl && (
         <div className="h-full w-full bg-background flex justify-center items-center">
           <div className="bg-accent p-4 rounded-md space-y-2 text-center">
@@ -172,16 +193,15 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
       {videoUrl && (
         <MediaPlayer
           className=" xl:h-138 2xl:h-170 xl:w-full bg-background"
-
           ref={playerRef}
-
+          key={videoUrl}
           onPlay={handlePlay}
           onPause={handlePause}
           onSeeked={handleSeek}
           onRateChange={handleRate}
 
-          src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-        //   src={videoUrl}
+          // src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          src={videoUrl}
           viewType="video"
           streamType="on-demand"
           logLevel="warn"
@@ -189,7 +209,9 @@ const Player = ({ socket, videoUrl, setVideoUrl }: PlayerProps) => {
           playsInline
           title="Sprite Fight"
           muted
-          poster="https://files.vidstack.io/sprite-fight/poster.webp"
+          load="visible"
+          posterLoad="visible"
+          // poster="https://files.vidstack.io/sprite-fight/poster.webp"
         >
           <MediaProvider>
             <Poster className="vds-poster" />

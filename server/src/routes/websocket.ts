@@ -114,10 +114,8 @@ export async function websocketRoutes(app: FastifyInstance) {
                 app.redis.get(`room:${roomId}:media`)
             ]);
 
-            socket.emit("room:state", {
-                media: JSON.parse(media!),
-                player: JSON.parse(player!),
-            });
+            socket.emit("room:state", JSON.parse(player!));
+            socket.emit("room:media", JSON.parse(media!))
 
             app.log.info(`[Socket] ${username} joined room ${roomId}`);
 
@@ -134,6 +132,7 @@ export async function websocketRoutes(app: FastifyInstance) {
                 app.redis.get(`room:${roomId}:state`),
                 app.redis.get(`room:${roomId}:media`)
             ]);
+
             const parsedState = state ? safeParse<any>(state) : null;
             if (!state) return;
             const sequence = Number(parsedState.sequence ?? 0) + 1;
@@ -146,10 +145,7 @@ export async function websocketRoutes(app: FastifyInstance) {
             }
 
             await app.redis.set(`room:${roomId}:state`, JSON.stringify(newState), "EX", USER_TTL);
-            socket.to(roomId).emit("room:state", {
-                player: newState,
-                media: JSON.parse(media!),
-            });
+            socket.to(roomId).emit("room:state", newState);
         })
 
         socket.on("room:change-video", async (data: { url: string }) => {
@@ -161,20 +157,16 @@ export async function websocketRoutes(app: FastifyInstance) {
                 app.redis.get(`room:${roomId}:media`)
             ]);
 
+            // if (!state && !media) return;
 
             const parsedMedia = JSON.parse(media!);
-
-
             const newMedia = {
                 ...parsedMedia,
                 videoUrl: data.url
             }
-            await app.redis.set(`room:${roomId}:media`, JSON.stringify(newMedia), "EX", USER_TTL);
 
-            socket.to(roomId).emit("room:state", {
-                player: JSON.parse(state!),
-                media: JSON.parse(media!),
-            });
+            await app.redis.set(`room:${roomId}:media`, JSON.stringify(newMedia), "EX", USER_TTL);
+            app.io.to(roomId).emit("room:media", newMedia);
 
 
         })
