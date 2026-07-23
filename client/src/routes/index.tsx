@@ -5,7 +5,6 @@ import {
   getOrGenerateName,
 } from "#/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({ component: App });
@@ -37,45 +36,23 @@ function App() {
 
   return (
     <main className="">
-      {/* <div className="flex items-center justify-center h-120">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-center max-w-lg">
-            <h2 className="text-3xl font-semibold">
-              Watch movie or video with your friends
-            </h2>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi cumque incidunt id aliquam odit vero corrupti earum, autem quaerat odio. Molestias quas qui libero molestiae tempore autem quis voluptate distinctio!</p>
-          </div>
-          <button
-            onClick={handleNewRoom}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1.5 text-sm text-[var(--sea-ink)] no-underline shadow-[0_8px_24px_rgba(30,90,72,0.08)] sm:px-4 sm:py-2"
-          >
-            <Plus size={16} /> New Room
-          </button>
-        </div>
-      </div> */}
-
-      <div className="relative min-h-[85vh] w-full bg-slate-950 text-white overflow-hidden flex items-center">
-        {/* Background Ambient Glows */}
+      <div className="relative min-h-[85vh] w-full bg-background text-white overflow-hidden flex items-center">
         <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[160px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-125 h-125 bg-indigo-600/10 rounded-full blur-[160px] pointer-events-none" />
 
-        {/* Main Container */}
         <div className="max-w-7xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          {/* Left Column: Copy & Interactive Actions */}
           <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 text-sm text-red-400 font-medium">
+            <div className="inline-flex items-center gap-2 bg-background border border-slate-800 rounded-full px-4 py-1.5 text-sm text-red-400 font-medium">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               Real-Time Video Synchronization
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-              Watch Together, <br />
-              <span className="bg-gradient-to-r from-red-500 to-indigo-500 bg-clip-text text-transparent">
-                Perfect Sync.
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none">
+              <span className=" bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">Watch Together</span>, <br />
+              <span className="text-red-600">Perfect Sync.</span>
             </h1>
 
-            <p className="text-lg text-slate-400 max-w-xl mx-auto lg:mx-0">
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
               Stream your favorite YouTube videos with friends globally. Zero
               lag, instant text chat, and synchronized playback controls. One
               pauses, everyone pauses.
@@ -84,7 +61,7 @@ function App() {
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
               <button
                 onClick={handleNewRoom}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 font-semibold rounded-xl shadow-lg shadow-red-600/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto px-8 py-4 bg-linear-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 font-semibold rounded-xl shadow-lg shadow-red-600/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
               >
                 <svg
                   xmlns="http://w3.org"
@@ -101,7 +78,7 @@ function App() {
                 Create New Room
               </button>
 
-              <button className="w-full sm:w-auto px-8 py-4 bg-slate-900 border border-slate-800 hover:bg-slate-800/80 font-semibold rounded-xl text-slate-300 transition-colors">
+              <button className="w-full sm:w-auto px-8 py-4 bg-primary dark:bg-card  border border-slate-800 hover:bg-slate-800/80 font-semibold rounded-xl text-slate-300 transition-colors">
                 How it works
               </button>
             </div>
